@@ -1,97 +1,67 @@
 from collections import deque
+# import time
+# start_time = time.time()
+
+def move(x, y, dir):
+    tmp_x = x + dir[0]
+    tmp_y = y + dir[1]
+    if tmp_x < 0 or tmp_x >= N or tmp_y < 0 or tmp_y >= N or grids[tmp_x][tmp_y] == '#':
+        return x, y
+    return tmp_x, tmp_y
 
 N = int(input())
 grids = [list(input()) for _ in range(N)]
 
-# queue = deque()
-queue = []
-all_cnt = 0
+# 各パターンまでの最短手数
+# dist = [list(list([10**18] * N for _ in range(N)) for _ in range(N)) for _ in range(N)]
+dist = [[10**18] * (N**2) for _ in range(N**2)]
+# print("--- %s seconds ---" % (time.time() - start_time))
+queue = deque()
 
-def print_grids():
-    for v in grids:
-        print("".join(v))
+dirs = [[1,0], [0,1], [-1,0], [0,-1]]
 
-# 訪問済みのマス
-# [x1][y1][x2][y2]
-checked_grids = [list(list([False] * N for _ in range(N)) for _ in range(N)) for _ in range(N)]
-
-# 各マスまでの操作回数
-cnt_grids = [list(list([10**10] * N for _ in range(N)) for _ in range(N)) for _ in range(N)]
-
-# プレイヤーの座標を取得
-x1, y1, x2, y2 = None, None, None, None
-for x, a in enumerate(grids):
-    for y, b in enumerate(a):
-        if b == 'P':
-            if x1 is None:
-                x1, y1 = x, y
-            else:
-                x2, y2 = x, y
+players = []
+for i in range(N):
+    for j in range(N):
+        if grids[i][j] == 'P':
+            players.append((i, j))
 
 
-def move(x, y, dir):
-    after_x, after_y = None, None
-    if dir == 'U':
-        after_x, after_y = x - 1, y
-    elif dir == 'D':
-        after_x, after_y = x + 1, y
-    elif dir == 'L':
-        after_x, after_y = x, y - 1
-    elif dir == 'R':
-        after_x, after_y = x, y + 1
+p1 = players[0]
+p2 = players[1]
 
+queue.append([p1[0], p1[1], p2[0], p2[1]])
+dist[p1[0] * N + p1[1]][p2[0] * N + p2[1]] = 0
+while queue:
+    x1, y1, x2, y2 = queue.popleft()
+    for d in dirs:
+        tx1, ty1 = move(x1, y1, d)
+        tx2, ty2 = move(x2, y2, d)
 
-    if(after_x < 0 or after_x >= N or after_y < 0 or after_y >= N):
-        return x, y
-    elif(grids[after_x][after_y] == '#'):
-        return x, y
-
-    return after_x, after_y
-
-
-def dfs(p1, p2, cnt):
-    global all_cnt
-    all_cnt += 1
-    x1, y1 = p1
-    x2, y2 = p2
-
-    if(cnt_grids[x1][y1][x2][y2] <= cnt):
-        # すでに最小手数で到達済みなのでこれ以上探索は不要
-        return
-
-    cnt_grids[x1][y1][x2][y2] = cnt
-
-    cnt += 1
-    for d in ['U', 'D', 'L', 'R']:
-        tmp_p1, tmp_p2 = move(x1, y1, d), move(x2, y2, d)
-        tmp_x1, tmp_y1 = tmp_p1
-        tmp_x2, tmp_y2 = tmp_p2
-        if(cnt_grids[tmp_x1][tmp_y1][tmp_x2][tmp_y2] <= cnt):
+        if (tx1 == x1 and ty1 == y1 and tx2 == x2 and ty2 == y2):
             continue
-        elif(checked_grids[tmp_x1][tmp_y1][tmp_x2][tmp_y2]):
-            continue
-        else:
-            checked_grids[tmp_x1][tmp_y1][tmp_x2][tmp_y2] = True
-            queue.append([tmp_p1, tmp_p2, cnt])
 
+        if(tx1 == tx2 and ty1 == ty2):
+            print(dist[x1 * N + y1][x2 * N + y2] + 1)
+            print("--- %s seconds ---" % (time.time() - start_time))
+            exit()
 
-queue.append([(x1, y1), (x2, y2), 0])
-checked_grids[x1][y1][x2][y2] = True
+        if (dist[tx1 * N + ty1][tx2 * N + ty2] > dist[x1 * N + y1][x2 * N + y2] + 1):
+            dist[tx1 * N + ty1][tx2 * N + ty2] = dist[x1 * N + y1][x2 * N + y2] + 1
+            queue.append([tx1, ty1, tx2, ty2])
 
-while len(queue) > 0:
-    # q = queue.popleft()
-    q = queue.pop()
-    dfs(q[0], q[1], q[2])
+ret = 10**18
+for i in range(N):
+    k1 = i * N
+    for j in range(N):
+        k2 = k1 + j
+        if dist[k2][k2] < ret:
+            ret = dist[k2][k2]
 
-
-ret = 10**10
-for x in range(N):
-    for y in range(N):
-        ret = min(ret, cnt_grids[x][y][x][y])
-
-if ret == 10**10:
+if ret == 10**18:
     print(-1)
 else:
     print(ret)
 
-# print(all_cnt)
+
+# print("--- %s seconds ---" % (time.time() - start_time))
